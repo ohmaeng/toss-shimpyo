@@ -1,0 +1,19 @@
+node_modules/
+dist/
+.vercel/
+
+# 비밀. 절대 커밋하지 않는다.
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# 파이프라인
+__pycache__/
+*.pyc
+.venv/
+pipeline/.cache/
+
+# OS
+.DS_Store
+Thumbs.db
