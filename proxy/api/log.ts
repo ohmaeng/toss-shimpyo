@@ -33,7 +33,7 @@ const ALLOWED_PARAM_KEYS = new Set([
   'mock',
 ]);
 
-export const config = { runtime: 'nodejs' };
+export const config = { runtime: 'edge' };
 
 export default async function handler(req: Request): Promise<Response> {
   if (req.method !== 'POST') return new Response(null, { status: 405 });
