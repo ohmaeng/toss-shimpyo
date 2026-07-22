@@ -1,0 +1,223 @@
+/* 하단 정류장 카드 — 시트 형태, 큰 글씨 */
+.stopcard {
+  background: var(--surface);
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  box-shadow: var(--shadow-float);
+  padding: var(--sp-3) var(--sp-5) var(--sp-5);
+  border-top: 1px solid var(--border);
+}
+
+.stopcard__grip {
+  width: 46px;
+  height: 5px;
+  border-radius: var(--radius-pill);
+  background: var(--border-strong);
+  margin: 0 auto var(--sp-3);
+}
+
+.stopcard__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--sp-3);
+}
+
+.stopcard__name {
+  font-size: var(--fs-xl);
+  letter-spacing: -0.6px;
+}
+
+.stopcard__routes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  margin-top: var(--sp-2);
+}
+.stopcard__routes-label {
+  width: 100%;
+  color: var(--ink-muted);
+  font-size: 15px;
+}
+
+.stopcard__route {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 34px;
+  height: 30px;
+  padding: 0 var(--sp-2);
+  border-radius: var(--radius-sm);
+  background: var(--brand-soft);
+  color: var(--brand-ink);
+  font-size: var(--fs-sm);
+  font-weight: 800;
+}
+
+/* 도착정보 배너 */
+.stopcard__arrival {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  margin: var(--sp-4) 0;
+  padding: var(--sp-3) var(--sp-4);
+  border-radius: var(--radius);
+  background: var(--brand-soft);
+  color: var(--brand-ink);
+  font-size: var(--fs-base);
+  font-weight: 800;
+}
+.stopcard__arrival[data-live="true"] {
+  background: var(--warm-soft);
+  color: var(--warm-strong);
+}
+.stopcard__livedot {
+  margin-left: auto;
+  font-size: var(--fs-sm);
+  font-weight: 800;
+  padding: 2px 10px;
+  border-radius: var(--radius-pill);
+  background: var(--warm);
+  color: var(--on-warm);
+}
+
+/* 도보 시간 — 현위치→정류장. 실경로/직선 폴백을 문구로 정직 구분. */
+.stopcard__walk {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  margin: 0 0 var(--sp-4);
+  padding: var(--sp-2) var(--sp-4);
+  border-radius: var(--radius);
+  background: var(--surface-2);
+  color: var(--ink-body);
+  font-size: var(--fs-base);
+  font-weight: 700;
+}
+.stopcard__walk svg {
+  flex: none;
+  opacity: 0.8;
+}
+
+/* 4시설 배지 2x2 */
+.stopcard__facilities {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--sp-3);
+}
+
+/* 대안 정류장 안내 — 은은한 보조. 있을 때만, 낮은 채도로 한 줄. */
+.stopcard__alt {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-2);
+  margin-top: var(--sp-3);
+  padding: var(--sp-2) var(--sp-3);
+  border-radius: var(--radius);
+  background: var(--surface-muted, var(--brand-soft));
+  color: var(--text-muted, var(--brand-ink));
+  font-size: var(--fs-sm);
+  line-height: 1.5;
+}
+.stopcard__alt svg {
+  flex: none;
+  margin-top: 2px;
+  opacity: 0.8;
+}
+.stopcard__alt b {
+  font-weight: 800;
+}
+
+/* 하단 액션 */
+.stopcard__actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--sp-3);
+  margin-top: var(--sp-4);
+}
+
+/* 이 정류장 QR — 스캔하면 해당 정류장을 출발지로 고정 */
+.stopcard__qrbtn {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-2);
+  min-height: var(--touch-lg);
+  border-radius: var(--radius);
+  border: 2px solid var(--border-strong);
+  background: var(--surface);
+  color: var(--ink-body);
+  font-size: var(--fs-base);
+  font-weight: 800;
+  cursor: pointer;
+}
+.stopcard__qrbtn:active {
+  transform: scale(0.98);
+}
+
+.stopcard__qr {
+  margin-top: var(--sp-3);
+  padding: var(--sp-4);
+  border-radius: var(--radius);
+  background: var(--surface-2);
+  text-align: center;
+}
+.stopcard__qr-hint {
+  font-size: var(--fs-sm);
+  color: var(--ink-body);
+  margin-bottom: var(--sp-2);
+}
+.stopcard__qr-img {
+  width: 200px;
+  height: 200px;
+  border-radius: var(--radius-sm);
+  background: #fff;
+}
+
+.stopcard__share,
+.stopcard__print,
+.stopcard__go {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-2);
+  min-height: var(--touch-lg);
+  border-radius: var(--radius);
+  font-size: var(--fs-base);
+  font-weight: 800;
+  text-decoration: none;
+  cursor: pointer;
+}
+.stopcard__route-arrivals { display: grid; gap: var(--sp-2); margin: calc(-1 * var(--sp-2)) 0 var(--sp-4); }
+.stopcard__route-arrivals > div { display: grid; grid-template-columns: 1fr auto auto; gap: var(--sp-2); align-items: center; padding: var(--sp-2) var(--sp-3); border: 1px solid var(--border); border-radius: var(--radius-sm); }
+.stopcard__route-arrivals span { font-weight: 900; color: var(--brand); }
+.stopcard__route-arrivals small { color: var(--ink-muted); }
+
+.stopcard__go {
+  grid-column: 1 / -1;
+  background: var(--brand);
+  color: var(--on-brand);
+  font-size: var(--fs-md);
+}
+
+.stopcard__share {
+  border: 2px solid var(--brand);
+  background: var(--surface);
+  color: var(--brand);
+}
+.stopcard__print {
+  border: 2px solid var(--brand);
+  background: var(--surface);
+  color: var(--brand-strong);
+}
+.stopcard__share:active,
+.stopcard__print:active {
+  transform: scale(0.98);
+}
+
+@media (min-width: 640px) {
+  .stopcard__name {
+    font-size: var(--fs-2xl);
+  }
+}
