@@ -15,7 +15,8 @@ import { cached, UpstreamError } from '../lib/cache';
  * [불변] 장애 시 빈 배열을 주지 않는다. 클라이언트가 "도착 예정 버스 없음"으로 표시하게 되기 때문이다.
  */
 
-const TAGO_URL = 'https://apis.data.go.kr/1613000/ArvlInfoInqireService/getSttnAcctoArvlPrarngInfoList';
+// 오퍼레이션명은 `Prearnge`(도착예정)다 — `Prarng`으로 쓰면 게이트웨이가 404 "API not found"를 낸다.
+const TAGO_URL = 'https://apis.data.go.kr/1613000/ArvlInfoInqireService/getSttnAcctoArvlPrearngeInfoList';
 /** 폴링 주기 30초보다 짧게 — 사용자마다 캐시가 갱신되도록. */
 const TTL_MS = 25_000;
 

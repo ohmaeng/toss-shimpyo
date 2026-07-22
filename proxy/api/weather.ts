@@ -45,7 +45,8 @@ async function fetchTemp(lat: number, lng: number): Promise<number | null> {
     const { baseDate, baseTime } = nowcastBase(new Date());
     const url = new URL(NCST_URL);
     url.searchParams.set('serviceKey', serviceKey());
-    url.searchParams.set('_type', 'json');
+    // 기상청은 TAGO의 `_type`이 아니라 `dataType`을 쓴다. `_type`을 보내면 무시되고 XML이 온다.
+    url.searchParams.set('dataType', 'JSON');
     url.searchParams.set('numOfRows', '20');
     url.searchParams.set('base_date', baseDate);
     url.searchParams.set('base_time', baseTime);
@@ -77,7 +78,8 @@ async function fetchHeatAlert(): Promise<WeatherValue['heatAlert']> {
   try {
     const url = new URL(WRN_URL);
     url.searchParams.set('serviceKey', serviceKey());
-    url.searchParams.set('_type', 'json');
+    // 기상청은 `dataType=JSON`. (TAGO만 `_type=json`)
+    url.searchParams.set('dataType', 'JSON');
     url.searchParams.set('numOfRows', '50');
     url.searchParams.set('pageNo', '1');
 
