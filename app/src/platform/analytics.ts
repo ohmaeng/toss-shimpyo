@@ -39,12 +39,17 @@ function toProxy(name: EventName, params: Params): void {
   if (!PROXY_BASE) return;
   const body = JSON.stringify({ name, params, ts: Date.now() });
   try {
-    // sendBeacon은 화면 전환 중에도 유실이 적고, 실패해도 앱을 막지 않는다.
-    if (typeof navigator !== 'undefined' && 'sendBeacon' in navigator) {
-      navigator.sendBeacon(`${PROXY_BASE}/api/log`, new Blob([body], { type: 'application/json' }));
-      return;
-    }
-    void fetch(`${PROXY_BASE}/api/log`, { method: 'POST', body, keepalive: true }).catch(() => {});
+    // sendBeacon은 credentials를 강제로 포함시킨다. 프록시가 ACAO:*(와일드카드)를 주므로
+    // 브라우저가 "wildcard + credentials" 조합을 차단한다(preflight 실패).
+    // keepalive fetch + credentials:'omit' 은 credentials 없이 전송되어 CORS-safe하고,
+    // 화면 전환/언로드 중에도 sendBeacon만큼 유실이 적다. body는 문자열이라
+    // Content-Type이 text/plain(CORS-safelisted)이 되어 preflight 자체가 없다.
+    void fetch(`${PROXY_BASE}/api/log`, {
+      method: 'POST',
+      body,
+      keepalive: true,
+      credentials: 'omit',
+    }).catch(() => {});
   } catch {
     /* 로깅 실패가 앱을 죽이면 안 된다 */
   }
