@@ -214,13 +214,23 @@ def load_shelters_csv(path: Path) -> list[dict[str, Any]]:
     return out
 
 
-def build_real(city_codes: list[int], shelter_csv: Path | None, data_date: str) -> list[dict[str, Any]]:
+def build_real(
+    cities: list[tuple[int, str]],
+    shelter_csv: Path | None,
+    data_date: str,
+    stops_only: bool,
+) -> list[dict[str, Any]]:
     """
     실데이터 경로.
 
+    stops_only=True 면 노선·배차간격 수집을 건너뛴다.
+      - 노선 수집은 노선당 API 1회라, 전국(138개 도시)에서는 10만+ 호출이 되어 쿼터를 초과한다.
+      - 노선 데이터의 유일한 소비처는 대안 정류장 4중 조건인데, 배차간격 확보율이 0%라
+        그 기능은 현재 동작하지 않는다 (docs/검증-결과-2026-07-23.md §4).
+      - 따라서 전국 빌드는 stops_only 로 한다: getSttnNoList 만 페이징 → 도시당 수 회 호출.
+
     아직 사람이 확인해야 하는 것:
       - 무더위쉼터 원천 CSV 경로 (--shelter-csv). 운영시간 컬럼 유무가 관건.
-      - TAGO 서비스 오퍼레이션명 (sources.py 상단 상수) — 포털 문서로 검증할 것.
       - 정류장 위치 DB와 TAGO nodeId가 같은 체계인지 (여기서는 TAGO 정류소 API를 쓰므로 조인이 자명하다)
     """
     from sources import fetch_route_stops, fetch_routes, fetch_stops
@@ -230,26 +240,29 @@ def build_real(city_codes: list[int], shelter_csv: Path | None, data_date: str) 
     shelters = load_shelters_csv(shelter_csv) if shelter_csv else []
 
     sggs: list[dict[str, Any]] = []
-    for city in city_codes:
-        print(f"[{city}] 정류장 수집...")
+    for city, cityname in cities:
+        label = f"{city} {cityname}".strip()
+        print(f"[{label}] 정류장 수집...")
         res = fetch_stops(city)
         if res.dropped:
-            print(f"[{city}] 좌표 결측으로 {res.dropped}건 제외")
+            print(f"[{label}] 좌표 결측으로 {res.dropped}건 제외")
 
-        print(f"[{city}] 노선·배차간격 수집...")
-        routes = fetch_routes(city)
-        by_id = {r.route_id: r for r in routes}
-
-        # 노선 → 경유 정류장. 4중 조건 #1(동일 노선 공유)의 입력.
-        print(f"[{city}] 노선별 경유정류장 {len(routes)}개 조회 (시간이 걸린다)...")
         stop_routes: dict[str, list[dict[str, Any]]] = {}
-        for i, r in enumerate(routes, 1):
-            if i % 50 == 0:
-                print(f"  {i}/{len(routes)}")
-            for node_id in fetch_route_stops(city, r.route_id):
-                stop_routes.setdefault(node_id, []).append(
-                    {"routeId": r.route_id, "name": r.route_no, "intervalMin": by_id[r.route_id].interval_min}
-                )
+        if stops_only:
+            print(f"[{label}] 노선 수집 생략 (stops-only)")
+        else:
+            print(f"[{label}] 노선·배차간격 수집...")
+            routes = fetch_routes(city)
+            by_id = {r.route_id: r for r in routes}
+            # 노선 → 경유 정류장. 4중 조건 #1(동일 노선 공유)의 입력.
+            print(f"[{label}] 노선별 경유정류장 {len(routes)}개 조회 (시간이 걸린다)...")
+            for i, r in enumerate(routes, 1):
+                if i % 50 == 0:
+                    print(f"  {i}/{len(routes)}")
+                for node_id in fetch_route_stops(city, r.route_id):
+                    stop_routes.setdefault(node_id, []).append(
+                        {"routeId": r.route_id, "name": r.route_no, "intervalMin": by_id[r.route_id].interval_min}
+                    )
 
         stops = [
             {
@@ -270,10 +283,10 @@ def build_real(city_codes: list[int], shelter_csv: Path | None, data_date: str) 
 
         if shelters:
             matched = join_shelters(stops, shelters)
-            print(f"[{city}] 쉼터 결합: {matched}/{len(stops)} 정류장")
+            print(f"[{label}] 쉼터 결합: {matched}/{len(stops)} 정류장")
 
         sggs.append(
-            {"dataDate": data_date, "sggCode": str(city), "sggName": f"지역코드 {city}", "stops": stops}
+            {"dataDate": data_date, "sggCode": str(city), "sggName": cityname or f"지역코드 {city}", "stops": stops}
         )
     return sggs
 
@@ -322,6 +335,9 @@ def main() -> None:
     ap.add_argument("--mock", action="store_true", help="키 없이 목 데이터 생성")
     ap.add_argument("--probe", action="store_true", help="배차간격 확보율만 측정 (7/21 컷 판단용)")
     ap.add_argument("--city-codes", type=str, default="", help="쉼표 구분 TAGO cityCode 목록")
+    ap.add_argument("--all-cities", action="store_true", help="TAGO 전체 도시(전국) 자동 수집 (서울 제외 — TAGO 미커버)")
+    ap.add_argument("--stops-only", action="store_true",
+                    help="노선·배차간격 수집 생략. 전국 빌드는 쿼터상 이 옵션이 사실상 필수.")
     ap.add_argument("--shelter-csv", type=str, default="", help="무더위쉼터 CSV 경로")
     ap.add_argument("--data-date", type=str, default="", help="원천 데이터 기준일 YYYY-MM (필수, 실데이터)")
     args = ap.parse_args()
@@ -335,18 +351,35 @@ def main() -> None:
     else:
         if not os.environ.get("DATA_GO_KR_SERVICE_KEY"):
             raise SystemExit("DATA_GO_KR_SERVICE_KEY 가 없다. --mock 을 쓰거나 .env 를 설정하라.")
-        codes = [int(c) for c in args.city_codes.split(",") if c.strip()]
-        if not codes:
-            raise SystemExit("--city-codes 를 지정하라 (예: --city-codes 23,25)")
+
+        # 도시 목록을 (code, name) 으로 해석한다.
+        from sources import fetch_city_codes
+
+        if args.all_cities:
+            print("전국 도시코드 조회 중...")
+            cities = fetch_city_codes()
+            print(f"  TAGO 도시 {len(cities)}개 (서울은 TAGO에 없어 제외됨)")
+        else:
+            codes = [int(c) for c in args.city_codes.split(",") if c.strip()]
+            if not codes:
+                raise SystemExit("--city-codes 또는 --all-cities 를 지정하라 (예: --city-codes 23,25,32010)")
+            name_map = dict(fetch_city_codes())
+            cities = [(c, name_map.get(c, "")) for c in codes]
+            unknown = [c for c, n in cities if not n]
+            if unknown:
+                print(f"  경고: TAGO에 없는 cityCode {unknown} — 0건이 나올 수 있다", file=sys.stderr)
 
         if args.probe:
-            probe(codes)
+            probe([c for c, _ in cities])
             return
 
         if not args.data_date:
             raise SystemExit("--data-date 가 없다 (예: --data-date 2026-07). dataDate 없이는 3상태 원칙을 지킬 수 없다.")
+        if args.all_cities and not args.stops_only:
+            print("  경고: --all-cities 인데 --stops-only 가 없다. 노선 수집은 노선당 1회 호출이라\n"
+                  "        전국에서 쿼터를 크게 초과한다. --stops-only 사용을 강력히 권한다.", file=sys.stderr)
         csv = Path(args.shelter_csv) if args.shelter_csv else None
-        sggs = build_real(codes, csv, args.data_date)
+        sggs = build_real(cities, csv, args.data_date, args.stops_only)
 
     sggs = [validate_sgg(s, report) for s in sggs]
     write_outputs(sggs, report)

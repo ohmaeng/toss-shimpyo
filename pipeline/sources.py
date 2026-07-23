@@ -17,7 +17,9 @@ import requests
 
 PORTAL_BASE = "https://apis.data.go.kr"
 
-# TODO(사람): 포털 문서로 오퍼레이션명 검증 필요
+# 오퍼레이션명은 2026-07-23 실 API 호출로 검증 완료 (docs/검증-결과-2026-07-23.md §3).
+# 이 4개는 모두 200/정상. 도착정보(proxy)의 ...ArvlPrarng 오타와 달리 여기는 오타가 없었다.
+CITY_CODE_URL = f"{PORTAL_BASE}/1613000/BusSttnInfoInqireService/getCtyCodeList"
 STOP_INFO_URL = f"{PORTAL_BASE}/1613000/BusSttnInfoInqireService/getSttnNoList"
 ROUTE_INFO_URL = f"{PORTAL_BASE}/1613000/BusRouteInfoInqireService/getRouteAcctoThrghSttnList"
 ROUTE_LIST_URL = f"{PORTAL_BASE}/1613000/BusRouteInfoInqireService/getRouteNoList"
@@ -74,6 +76,17 @@ def paged(url: str, params: dict[str, Any], num_of_rows: int = 1000) -> Iterator
         if page * num_of_rows >= total:
             return
         page += 1
+
+
+def fetch_city_codes() -> list[tuple[int, str]]:
+    """TAGO 전체 도시코드 (code, name). --all-cities 의 입력. 서울은 TAGO에 없다."""
+    out: list[tuple[int, str]] = []
+    for it in paged(CITY_CODE_URL, {}):
+        code = it.get("citycode")
+        if code is None:
+            continue
+        out.append((int(code), str(it.get("cityname", "")).strip()))
+    return out
 
 
 @dataclass(frozen=True)
